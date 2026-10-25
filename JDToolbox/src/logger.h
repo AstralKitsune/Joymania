@@ -5,18 +5,36 @@
 #include <chrono>
 #include <ctime>
 #include <iomanip>
+#include <filesystem>
+#include <format>
 
-//#include <Windows.h>
+void test()
+{
+    const auto log_path = std::filesystem::current_path() / "log.txt";
+    std::ofstream fstream(log_path);
 
-// #ifndef UTILS_H
-//#define UTILS_H
-//void HelloWorld();
-//#endif        // then #include "utils.h" everywhere else, also in "utils.cpp"
+    fstream << std::format("hello world {}\n", ::GetCurrentProcessId());
+    fstream.close();
+}
 
-
-// Use AppData for saving log files, or OutputDebugString and capture with DebugView
 
 inline std::string log_file_name = "JDToolbox.log";
+
+template <class... T>
+auto log(std::format_string<T...> fmt, T &&...args) -> void
+{
+    static auto mtx = std::mutex{};
+
+    std::scoped_lock lock(mtx);
+
+    const auto log_path = "JDToolbox.log";
+
+    if (auto file = std::ofstream{log_path, std::ios::app}; file)
+    {
+        const auto str = std::format(fmt, std::forward<T>(args)...);
+        file << str << std::endl;
+    }
+}
 
 class Logger {
 public:
@@ -42,6 +60,7 @@ private:
         if (!initialized) {
             // Truncate (clear) the log file if it already exists
             std::ofstream log(log_file_name, std::ios::trunc);
+            log.close();
 
             /*wchar_t tempPath[MAX_PATH] = {0};
             DWORD len = GetTempPath(MAX_PATH, tempPath);

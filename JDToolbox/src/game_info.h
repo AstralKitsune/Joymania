@@ -7,14 +7,18 @@
 
 struct GameInfo
 {
-    std::string gameName;
-    std::string processName;
-    uintptr_t baseAddress;
-    std::vector<uintptr_t> healthOffsets;
+    std::string gameName; // name
+    std::string processName; // moduleName or exeName?
+    uintptr_t baseAddress; // pointerBase
+    std::vector<uintptr_t> healthOffsets; // playerHealth
     std::vector<uintptr_t> jumpOffsets;
     std::vector<uintptr_t> xPositionOffsets;
     std::vector<uintptr_t> yPositionOffsets;
     std::vector<uintptr_t> zPositionOffsets;
+    std::vector<uintptr_t> pastTimeInLevel;
+    std::vector<uintptr_t> normalPresents;
+    std::vector<uintptr_t> rarePresents;
+    std::vector<uintptr_t> epicPresents;
 };
 
 inline std::vector<GameInfo> games = {

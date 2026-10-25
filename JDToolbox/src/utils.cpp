@@ -4,6 +4,16 @@
 #include <cstring>
 #include <psapi.h>
 
+// source: https://github.com/nathan-baggs/nephrite/blob/main/src/payload.cpp
+auto wide_str_to_narrow_str(const std::wstring &wstr) -> std::string
+{
+    auto len = WideCharToMultiByte(CP_UTF8, 0, wstr.c_str(), -1, nullptr, 0, nullptr, nullptr);
+    auto str = std::string(len, '\0');
+    WideCharToMultiByte(CP_UTF8, 0, wstr.c_str(), -1, str.data(), len, nullptr, nullptr);
+    return str;
+}
+
+
 /// <summary>Helper to format pointer / address as hex string</summary>
 /// <param name="value">Pointer or address value</param>
 /// <returns>Formatted hex string (e.g., "0xDEADBEEF")</returns>

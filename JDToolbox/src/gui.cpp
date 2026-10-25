@@ -32,7 +32,10 @@ POINTS menu_Position = { 100, 100 };
 
 GameInfo* currentGame = nullptr;
 
+bool isInGame = false;
+bool isGameLoading = false;
 int health = 0;
+int jumpState = 0;
 bool infiniteJump = false;
 bool freezePosition = false;
 float posX = 1.0f;
@@ -70,7 +73,9 @@ LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 
     switch (msg)
     {
-        case WM_SIZE:
+        case WM_MOUSEACTIVATE:
+            return MA_ACTIVATE;
+        /*case WM_SIZE:
         {
             if (g_pd3dDevice && wParam != SIZE_MINIMIZED)
             {
@@ -80,7 +85,7 @@ LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
                 Logger::Log("WM_SIZE received, device reset. New size: " + std::to_string(g_d3dpp.BackBufferWidth) + "x" + std::to_string(g_d3dpp.BackBufferHeight));
             }
         }
-        return 0;
+        return 0;*/
 
         case WM_SYSCOMMAND:
         {
@@ -96,7 +101,7 @@ LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
         }
         return 0;
 
-        case WM_LBUTTONDOWN:
+        /*case WM_LBUTTONDOWN:
         {
             menu_Position = MAKEPOINTS(lParam);
         }
@@ -128,7 +133,7 @@ LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
                     );
             }
         }
-        return 0;
+        return 0;*/
     }
 
     return DefWindowProc(hWnd, msg, wParam, lParam);
@@ -145,7 +150,8 @@ void InitImGuiWindow(const wchar_t* windowName, const wchar_t* className) {
         .cbWndExtra = 0L,
         .hInstance = GetModuleHandle(0),
         .hIcon = 0,
-        .hCursor = 0,
+        //.hCursor = 0,
+        .hCursor = LoadCursor(nullptr, IDC_ARROW),
         .hbrBackground = 0,
         .lpszMenuName = 0,
         .lpszClassName = className,
@@ -156,7 +162,7 @@ void InitImGuiWindow(const wchar_t* windowName, const wchar_t* className) {
     Logger::Log("Window class registered.");
 
     g_hWnd = CreateWindowExW( // CreateWindowW
-        WS_EX_TOPMOST | WS_EX_LAYERED,
+        WS_EX_TOPMOST | WS_EX_LAYERED, //  | WS_EX_TRANSPARENT | WS_EX_NOACTIVATE
         wc.lpszClassName,
         windowName,
         // WS_OVERLAPPEDWINDOW,
@@ -170,7 +176,7 @@ void InitImGuiWindow(const wchar_t* windowName, const wchar_t* className) {
         wc.hInstance,
         0
     );
-    SetLayeredWindowAttributes(g_hWnd, RGB(0,0,0), 0, ULW_COLORKEY); // LWA_COLORKEY
+    SetLayeredWindowAttributes(g_hWnd, RGB(0,0,0), 255, LWA_COLORKEY); // ULW_COLORKEY
 
     if (!g_hWnd) {
         Logger::Log("CreateWindowW failed with error: " + std::to_string(GetLastError()));
@@ -208,10 +214,10 @@ void InitImGuiWindow(const wchar_t* windowName, const wchar_t* className) {
     Logger::Log("Direct3D9 device created.");
 
     // Show window
-    ShowWindow(g_hWnd, SW_SHOWDEFAULT);
+    ShowWindow(g_hWnd, SW_SHOW); // SW_SHOWDEFAULT
     //ShowWindow(g_hWnd, SW_HIDE);
     UpdateWindow(g_hWnd);
-    SetWindowPos(g_hWnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+    SetWindowPos(g_hWnd, HWND_TOPMOST, menu_InitialX, menu_InitialY, menu_Width, menu_Height, SWP_NOMOVE | SWP_NOSIZE | SWP_FRAMECHANGED | SWP_SHOWWINDOW); // SWP_NOMOVE | SWP_NOSIZE SWP_NOACTIVATE | SWP_SHOWWINDOW
 
     // Setup ImGui
     IMGUI_CHECKVERSION();
@@ -237,6 +243,7 @@ void InitImGuiWindow(const wchar_t* windowName, const wchar_t* className) {
     style.FramePadding = ImVec2(5, 5);
     style.CellPadding = ImVec2(4.f, 8.f);
     style.FontSizeBase = 18.0f;
+    // style.ImGuiCol_CheckboxSelectedBg
 
     ImGui_ImplWin32_Init(g_hWnd);
     ImGui_ImplDX9_Init(g_pd3dDevice);
@@ -279,6 +286,7 @@ DWORD WINAPI ImGuiThread(LPVOID)
         return 1;
     }
     Logger::Log("Game module base address: " + FormatHex(reinterpret_cast<uintptr_t>(game_handle)));
+    std::cout << "Game module base address: " << game_handle << std::endl;
 
     uintptr_t base = reinterpret_cast<uintptr_t>(game_handle) + currentGame->baseAddress;
     Logger::Log("Pointer base calculated: " + FormatHex(base));
@@ -313,8 +321,35 @@ DWORD WINAPI ImGuiThread(LPVOID)
 
         ImGui::BeginTabBar("123");
         if (ImGui::BeginTabItem("Player")) {
+            if (base == 0)
+            {
+                Logger::Log("base not initialized, we are probably still loading up the game");
+            }
+
+            uintptr_t test = 0;
+            std::memcpy(&test, reinterpret_cast<void*>(base), sizeof(test));
+            if (test == 0)
+            {
+                isGameLoading = true;
+            }
+            else
+            {
+                isGameLoading = false;
+            }
+
             uintptr_t healthAddr = ResolvePointer(base, currentGame->healthOffsets);
             uintptr_t jumpAddr = ResolvePointer(base, currentGame->jumpOffsets);
+
+            // I currently don't have a reliable way of checking if we are in-game or not, so I just
+            // try to read from the health address, which will only work in-game
+            if (healthAddr != 0)
+            {
+                isInGame = true;
+            }
+            else
+            {
+                isInGame = false;
+            }
 
             int memHealth = 0;
             if (healthAddr != 0)
@@ -371,13 +406,21 @@ DWORD WINAPI ImGuiThread(LPVOID)
 
             ImGui::Separator();
 
+            ImGui::Text("2nd jump used: "); // Jump State
+            if (jumpAddr != 0)
+            {
+                std::memcpy(&jumpState, reinterpret_cast<int*>(jumpAddr), sizeof(jumpState));
+                ImGui::SameLine();
+                ImGui::Text(jumpState == 0 ? "No" : "Yes");
+            }
+
             ImGui::Checkbox("Infinite Jump", &infiniteJump);
             if (infiniteJump)
             {
                 if (jumpAddr != 0)
                 {
                     int n = 0;
-                    std::memcpy(reinterpret_cast<void*>(jumpAddr), &n, sizeof(n));
+                    std::memcpy(reinterpret_cast<int*>(jumpAddr), &n, sizeof(n));
                 }
             }
 
@@ -492,8 +535,9 @@ DWORD WINAPI ImGuiThread(LPVOID)
             if (ImGui::Button("Show Loaded Modules")) menu_ShowModulesWindow = true;
 
             // for some reason this style selector is way too wide (same width as sliderFloat below for some reason)
-            ImGui::ShowStyleSelector("Style Selector");
-            ImGui::ShowFontSelector("Font Selector");
+            ImGui::ShowStyleSelector("Style Selector"); // this only shows dark, light, classic and doesnt respect new styles we might add
+                                                        // look at the src for ShowStyleSelector, then use that but add more switch cases for any styles we might add ourselves
+            ImGui::ShowFontSelector("Font Selector"); // this loops for (ImFont* font : io.Fonts->Fonts) and uses font->GetDebugName()
             ImGui::ShowDebugLogWindow();
 
             // put divider here or smth
