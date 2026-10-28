@@ -37,6 +37,12 @@
 
 <img src="https://github.com/user-attachments/assets/da5dc50f-97f2-40f2-942d-f3bc5ed782cb">
 
+## [SC] PINCE Cheat Table
+
+[Download](/SantaClausInTrouble.pct)
+
+<img src="https://github.com/user-attachments/assets/dd9de1e8-bccc-40ab-8210-e91500477906" />
+
 ## [ALL] Hex Pattern
 - A hex pattern designed for the use with [ImHex](https://github.com/werwolv/imhex) hex editor. It automatically highlights the different data sections of the xpk archive file formats used in SC (`xmas.xpk`), SC2 (`xmas.xpk`) and RR (`bb.xpk`). Just open the xpk file in ImHex, then click File → Import → Pattern file and select `joymania_xpk.hexpat`.
 
