@@ -33,13 +33,13 @@
 
 ## [SC] Cheat Table
 
-[Download](/SantaClausInTrouble.CT)
+[Download](/CheatTables/SantaClausInTrouble.CT)
 
 <img src="https://github.com/user-attachments/assets/da5dc50f-97f2-40f2-942d-f3bc5ed782cb">
 
 ## [SC] PINCE Cheat Table
 
-[Download](/SantaClausInTrouble.pct)
+[Download](/CheatTables/SantaClausInTrouble.pct)
 
 <img src="https://github.com/user-attachments/assets/dd9de1e8-bccc-40ab-8210-e91500477906" />
 
